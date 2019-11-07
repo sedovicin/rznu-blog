@@ -1,0 +1,13 @@
+package hr.fer.rznu.lab1.blog;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class BlogApplication {
+
+	public static void main(final String[] args) {
+		SpringApplication.run(BlogApplication.class, args);
+	}
+
+}
