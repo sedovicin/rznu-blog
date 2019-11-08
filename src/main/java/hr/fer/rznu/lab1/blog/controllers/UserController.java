@@ -25,8 +25,8 @@ public class UserController {
 		if (userRepository.existsById(user.getUsername())) {
 			return new ResponseEntity<>(HttpStatus.CONFLICT);
 		}
-
-		userRepository.save(user);
+		User newUser = new User(user.getUsername(), User.encryptPassword(user.getPassword()));
+		userRepository.save(newUser);
 
 		return new ResponseEntity<>(HttpStatus.CREATED);
 	}

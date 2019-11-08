@@ -2,9 +2,12 @@ package hr.fer.rznu.lab1.blog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +22,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import hr.fer.rznu.lab1.blog.entities.User;
 import hr.fer.rznu.lab1.blog.repositories.UserRepository;
+import hr.fer.rznu.lab1.blog.security.BlogUserDetailsService;
 
 @WebMvcTest
 @PropertySource(value = "classpath:restapi.properties")
@@ -29,6 +33,9 @@ public class WebMvcTests {
 
 	@MockBean
 	private UserRepository userRepository;
+
+	@MockBean
+	private BlogUserDetailsService blogUserDetailsService;
 
 	@Value("${register}")
 	private String registerPath;
@@ -69,4 +76,32 @@ public class WebMvcTests {
 				.content(Converter.convertObjectToJson(dummyUser))).andExpect(status().isCreated());
 
 	}
+
+	@Test
+	public void authorizationWorksProperly() throws Exception {
+		User testUserEncryptedPass = new User("test", User.encryptPassword("pass"));
+		when(userRepository.findById(testUserEncryptedPass.getUsername()))
+				.thenReturn(Optional.of(testUserEncryptedPass));
+		when(blogUserDetailsService.loadUserByUsername(testUserEncryptedPass.getUsername()))
+				.thenReturn(BlogUserDetailsService.blogUserToSpringUser(testUserEncryptedPass));
+
+		User testUser = new User("test", "pass");
+		User notRegisteredUser = new User("notRegistered", "password");
+
+		mockMvc.perform(post(registerPath).contentType(MediaType.APPLICATION_JSON)
+				.content(Converter.convertObjectToJson(testUser))).andExpect(status().isCreated());
+
+		int httpResponseStatus = mockMvc
+				.perform(get(usersPath).accept(MediaType.APPLICATION_JSON)
+						.with(httpBasic(testUser.getUsername(), testUser.getPassword())))
+				.andReturn().getResponse().getStatus();
+		assertThat(httpResponseStatus).isNotEqualTo(HttpStatus.UNAUTHORIZED.value());
+
+		httpResponseStatus = mockMvc
+				.perform(get(usersPath).accept(MediaType.APPLICATION_JSON)
+						.with(httpBasic(notRegisteredUser.getUsername(), notRegisteredUser.getPassword())))
+				.andReturn().getResponse().getStatus();
+		assertThat(httpResponseStatus).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+	}
+
 }
