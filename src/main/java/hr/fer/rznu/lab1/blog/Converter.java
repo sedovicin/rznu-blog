@@ -6,6 +6,8 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import hr.fer.rznu.lab1.blog.dto.BlogPost;
+import hr.fer.rznu.lab1.blog.entities.BlogPostEntity;
 import hr.fer.rznu.lab1.blog.entities.User;
 
 public class Converter {
@@ -22,5 +24,10 @@ public class Converter {
 			usersNew.add(newUser);
 		}
 		return usersNew;
+	}
+
+	public static BlogPostEntity blogPostToEntity(final BlogPost blogPost) {
+
+		return null;
 	}
 }

@@ -28,18 +28,22 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import hr.fer.rznu.lab1.blog.entities.User;
+import hr.fer.rznu.lab1.blog.repositories.BlogPostRepository;
 import hr.fer.rznu.lab1.blog.repositories.UserRepository;
 import hr.fer.rznu.lab1.blog.security.BlogUserDetailsService;
 
 @WebMvcTest
 @PropertySource(value = "classpath:restapi.properties")
-public class WebMvcTests {
+public class AuthAndUserTests {
 
 	@Autowired
 	private MockMvc mockMvc;
 
 	@MockBean
 	private UserRepository userRepository;
+
+	@MockBean
+	private BlogPostRepository blogPostRepository;
 
 	@MockBean
 	private BlogUserDetailsService blogUserDetailsService;
