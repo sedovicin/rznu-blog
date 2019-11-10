@@ -14,6 +14,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import hr.fer.rznu.lab1.blog.dto.BlogPost;
 import hr.fer.rznu.lab1.blog.entities.User;
@@ -42,39 +44,77 @@ public class BlogPostTests {
 	private String postsPath;
 
 	@Test
-	public void blogPostingWorksProperly() throws Exception {
-		String testUsername = "test";
+	public void blogPostAddingWorksProperly() throws Exception {
 		String testPassword = "pass1";
-		User testUser = new User(testUsername, User.encryptPassword(testPassword));
+		User testUser = prepareTestUser(testPassword);
+		BlogPost newPost;
 
-		BlogPost newPost = new BlogPost("New post", "This is a test post.");
+		// Valid blog post
+		newPost = new BlogPost("New post", "This is a test post.");
+		performJsonRequest(put(postsPath), testUser, testPassword, newPost).andExpect(status().isCreated());
 
-		when(blogUserDetailsService.loadUserByUsername(testUser.getUsername()))
-				.thenReturn(BlogUserDetailsService.blogUserToSpringUser(testUser));
-
-		mockMvc.perform(
-				put(postsPath).contentType(MediaType.APPLICATION_JSON).content(Converter.convertObjectToJson(newPost))
-						.accept(MediaType.APPLICATION_JSON).with(httpBasic(testUsername, testPassword)).with(csrf()))
-				.andExpect(status().isCreated());
-
+		// Missing body
 		newPost = new BlogPost("Title only", "");
+		performJsonRequest(put(postsPath), testUser, testPassword, newPost).andExpect(status().isBadRequest());
 
-		when(blogUserDetailsService.loadUserByUsername(testUser.getUsername()))
-				.thenReturn(BlogUserDetailsService.blogUserToSpringUser(testUser));
-
-		mockMvc.perform(
-				put(postsPath).contentType(MediaType.APPLICATION_JSON).content(Converter.convertObjectToJson(newPost))
-						.with(httpBasic(testUsername, testPassword)).with(csrf()))
-				.andExpect(status().isBadRequest());
-
+		// Missing title
 		newPost = new BlogPost("", "Body only");
+		performJsonRequest(put(postsPath), testUser, testPassword, newPost).andExpect(status().isBadRequest());
 
-		when(blogUserDetailsService.loadUserByUsername(testUser.getUsername()))
-				.thenReturn(BlogUserDetailsService.blogUserToSpringUser(testUser));
+	}
 
-		mockMvc.perform(
-				put(postsPath).contentType(MediaType.APPLICATION_JSON).content(Converter.convertObjectToJson(newPost))
-						.with(httpBasic(testUsername, testPassword)).with(csrf()))
-				.andExpect(status().isBadRequest());
+	/**
+	 * Creates and returns new test user
+	 *
+	 * @param password password to set to new user
+	 * @return new test user with given password
+	 */
+	private User prepareTestUser(final String password) {
+		String testUsername = "test";
+		return new User(testUsername, User.encryptPassword(password));
+	}
+
+	/**
+	 * Does mocking of authorising existing user
+	 *
+	 * @param user user to be authorised
+	 */
+	private void ensureAuthentication(final User user) {
+		when(blogUserDetailsService.loadUserByUsername(user.getUsername()))
+				.thenReturn(BlogUserDetailsService.blogUserToSpringUser(user));
+	}
+
+	/**
+	 * Method helper for builder setup. Adds content type and accept headers, sets
+	 * content and authorisation data.
+	 *
+	 * @param requestMethodWithPath method to be called
+	 * @param username
+	 * @param password
+	 * @param content
+	 * @return
+	 * @throws Exception
+	 */
+	private MockHttpServletRequestBuilder jsonRequest(final MockHttpServletRequestBuilder requestMethodWithPath,
+			final String username, final String password, final Object content) throws Exception {
+		return requestMethodWithPath.contentType(MediaType.APPLICATION_JSON)
+				.content(Converter.convertObjectToJson(content)).accept(MediaType.APPLICATION_JSON)
+				.with(httpBasic(username, password));
+	}
+
+	/**
+	 * Performs a mocked request using MockMvc.
+	 *
+	 * @param request  request to be performed (example: get("/users"))
+	 * @param user     authorized user
+	 * @param password user's unencrypted password
+	 * @param content  body content. Can be null
+	 * @return ResultActions in order to maximally customize what is expected
+	 * @throws Exception
+	 */
+	private ResultActions performJsonRequest(final MockHttpServletRequestBuilder request, final User user,
+			final String password, final Object content) throws Exception {
+		ensureAuthentication(user);
+		return mockMvc.perform(jsonRequest(request, user.getUsername(), password, content).with(csrf()));
 	}
 }
