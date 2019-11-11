@@ -17,6 +17,11 @@ public class Converter {
 		return om.writeValueAsBytes(object);
 	}
 
+	public static String convertObjectToJsonString(final Object object) throws JsonProcessingException {
+		ObjectMapper om = new ObjectMapper();
+		return om.writeValueAsString(object);
+	}
+
 	public static List<User> removeUserPasswords(final List<User> users) {
 		List<User> usersNew = new ArrayList<>();
 		for (User user : users) {

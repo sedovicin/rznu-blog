@@ -27,8 +27,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import hr.fer.rznu.lab1.blog.entities.User;
 import hr.fer.rznu.lab1.blog.repositories.BlogPostRepository;
 import hr.fer.rznu.lab1.blog.repositories.UserRepository;
@@ -123,8 +121,7 @@ public class AuthAndUserTests {
 		users.add(user1);
 		users.add(user2);
 
-		ObjectMapper om = new ObjectMapper();
-		String listToJson = om.writeValueAsString(Converter.removeUserPasswords(users));
+		String listToJson = Converter.convertObjectToJsonString(Converter.removeUserPasswords(users));
 
 		when(userRepository.findAll()).thenReturn(users);
 
@@ -135,7 +132,7 @@ public class AuthAndUserTests {
 		// query for a single user
 		users = new ArrayList<>();
 		users.add(user1);
-		listToJson = om.writeValueAsString(Converter.removeUserPasswords(users));
+		listToJson = Converter.convertObjectToJsonString(Converter.removeUserPasswords(users));
 
 		when(userRepository.findById(user1.getUsername())).thenReturn(Optional.of(user1));
 

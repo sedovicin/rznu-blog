@@ -1,5 +1,7 @@
 package hr.fer.rznu.lab1.blog.entities;
 
+import java.util.Objects;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -59,5 +61,31 @@ public class BlogPostEntity {
 	}
 
 	public BlogPostEntity() {
+	}
+
+	@Override
+	public boolean equals(final Object other) {
+		if (other == null) {
+			return false;
+		}
+		if (!(other instanceof BlogPostEntity)) {
+			return false;
+		}
+		if (this == other) {
+			return true;
+		}
+		BlogPostEntity otherBlogPost = (BlogPostEntity) other;
+		boolean isEqual = (((this.username == null) && (otherBlogPost.username == null))
+				|| (this.username.equals(otherBlogPost.username)));
+		isEqual = isEqual && (((this.title == null) && (otherBlogPost.title == null))
+				|| (this.title.equals(otherBlogPost.title)));
+		isEqual = isEqual
+				&& (((this.body == null) && (otherBlogPost.body == null)) || (this.body.equals(otherBlogPost.body)));
+		return isEqual;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(id, username, title, body);
 	}
 }

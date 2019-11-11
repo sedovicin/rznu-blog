@@ -3,21 +3,29 @@ package hr.fer.rznu.lab1.blog;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.data.domain.Example;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import hr.fer.rznu.lab1.blog.dto.BlogPost;
+import hr.fer.rznu.lab1.blog.entities.BlogPostEntity;
 import hr.fer.rznu.lab1.blog.entities.User;
 import hr.fer.rznu.lab1.blog.repositories.BlogPostRepository;
 import hr.fer.rznu.lab1.blog.repositories.UserRepository;
@@ -60,6 +68,42 @@ public class BlogPostTests {
 		// Missing title
 		newPost = new BlogPost("", "Body only");
 		performJsonRequest(put(postsPath), testUser, testPassword, newPost).andExpect(status().isBadRequest());
+
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void blogPostListWorksProperly() throws Exception {
+		// fetch by username, by title, all, mine
+		String testPassword = "pass1";
+		User testUser = prepareTestUser(testPassword);
+
+		// Fetch all
+		BlogPostEntity post1 = new BlogPostEntity(1, "dummy", "New post1", "This is a test post.");
+		BlogPostEntity post2 = new BlogPostEntity(2, "test", "New post2", "This is a second post.");
+
+		List<BlogPostEntity> blogPosts = new ArrayList<>();
+		blogPosts.add(post1);
+		blogPosts.add(post2);
+
+		when(blogPostRepository.findAll()).thenReturn(blogPosts);
+		performJsonRequest(get(postsPath), testUser, testPassword, null).andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON))
+				.andExpect(content().json(Converter.convertObjectToJsonString(blogPosts)));
+
+		post1 = new BlogPostEntity(1, "test", "New post1", "This is a test post.");
+		post2 = new BlogPostEntity(2, "test", "New post2", "This is a second post.");
+		blogPosts = new ArrayList<>();
+		blogPosts.add(post1);
+		blogPosts.add(post2);
+
+		when(blogPostRepository.findAll(ArgumentMatchers.any(Example.class))).thenReturn(blogPosts);
+		performJsonRequest(get(postsPath).param("username", testUser.getUsername()), testUser, testPassword, null)
+				.andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+				.andExpect(content().json(Converter.convertObjectToJsonString(blogPosts)));
+		performJsonRequest(get(postsPath).param("title", "New post1"), testUser, testPassword, null)
+				.andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
+				.andExpect(content().json(Converter.convertObjectToJsonString(blogPosts)));
 
 	}
 
