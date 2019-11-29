@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import hr.fer.rznu.lab1.blog.dto.BlogPost;
@@ -29,6 +30,12 @@ public class Converter {
 			usersNew.add(newUser);
 		}
 		return usersNew;
+	}
+
+	public static <T> T convertJsonStringToObject(final String content, final Class<T> valueType)
+			throws JsonMappingException, JsonProcessingException {
+		ObjectMapper om = new ObjectMapper();
+		return om.readValue(content, valueType);
 	}
 
 	public static BlogPostEntity blogPostToEntity(final BlogPost blogPost) {
