@@ -1,7 +1,6 @@
 package hr.fer.rznu.lab1.blog;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -217,15 +216,15 @@ class BlogApplicationIT {
 	@Order(value = 4)
 	public void blogPostFetchShouldWork() throws JsonMappingException, JsonProcessingException {
 		BlogPost blogPost = new BlogPost("Test blog 5000", "Test content 5000.");
-		String blogPostId = "test-blog-5000";
+		String blogPostId5000 = "test-blog-5000";
 
 		// Create blog post for other test user
-		ClientResponse monoResponse = webClient.put().uri(postsPath + "/" + blogPostId)
+		ClientResponse monoResponse = webClient.put().uri(postsPath + "/" + blogPostId5000)
 				.headers(headers -> headers.setBasicAuth(testUsername1, testPassword1)).bodyValue(blogPost).exchange()
 				.block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.CREATED);
 
-		blogPostsStatic.add(new BlogPostShort(blogPostId, testUsername1, blogPost.getTitle()));
+		blogPostsStatic.add(new BlogPostShort(blogPostId5000, testUsername1, blogPost.getTitle()));
 
 		// Without authorization should return unauthorized
 		monoResponse = webClient.get().uri(postsPath).exchange().block();
@@ -308,6 +307,27 @@ class BlogApplicationIT {
 	@Test
 	@Order(value = 5)
 	public void blogPostDeleteShouldWork() {
-		fail();
+		// should be able to delete existing blog post
+		ClientResponse monoResponse = webClient.delete()
+				.uri(usersPath + "/" + testUsername + postsPath + "/" + blogPostsStatic.get(0).getId()).exchange()
+				.block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		monoResponse = webClient.delete()
+				.uri(usersPath + "/" + testUsername + postsPath + "/" + blogPostsStatic.get(0).getId())
+				.headers(headers -> headers.setBasicAuth(unauthUsername, unauthPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		monoResponse = webClient.delete()
+				.uri(usersPath + "/" + testUsername + postsPath + "/" + blogPostsStatic.get(0).getId())
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		// should not be able to delete another users blog post
+		monoResponse = webClient.delete()
+				.uri(usersPath + "/" + testUsername1 + postsPath + "/" + blogPostsStatic.get(2).getId())
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
 	}
 }
