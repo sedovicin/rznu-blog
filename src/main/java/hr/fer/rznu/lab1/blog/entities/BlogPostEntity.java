@@ -2,38 +2,34 @@ package hr.fer.rznu.lab1.blog.entities;
 
 import java.util.Objects;
 
+import javax.persistence.EmbeddedId;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "BLOG_POST")
 public class BlogPostEntity {
 
-	@Id
-	@GeneratedValue
-	private Integer id;
-
-	private String username;
+	@EmbeddedId
+	private final BlogPostEntityId blogPostEntityId;
 
 	private String title;
 	private String body;
 
-	public Integer getId() {
-		return id;
+	public String getId() {
+		return blogPostEntityId.getId();
 	}
 
-	public void setId(final Integer id) {
-		this.id = id;
+	public void setId(final String id) {
+		blogPostEntityId.setId(id);
 	}
 
 	public String getUsername() {
-		return username;
+		return blogPostEntityId.getUsername();
 	}
 
 	public void setUsername(final String username) {
-		this.username = username;
+		blogPostEntityId.setUsername(username);
 	}
 
 	public String getTitle() {
@@ -52,15 +48,15 @@ public class BlogPostEntity {
 		this.body = body;
 	}
 
-	public BlogPostEntity(final Integer id, final String username, final String title, final String body) {
+	public BlogPostEntity(final String id, final String username, final String title, final String body) {
 		super();
-		this.id = id;
-		this.username = username;
+		blogPostEntityId = new BlogPostEntityId(id, username);
 		this.title = title;
 		this.body = body;
 	}
 
 	public BlogPostEntity() {
+		blogPostEntityId = new BlogPostEntityId();
 	}
 
 	@Override
@@ -75,8 +71,8 @@ public class BlogPostEntity {
 			return true;
 		}
 		BlogPostEntity otherBlogPost = (BlogPostEntity) other;
-		boolean isEqual = (((this.username == null) && (otherBlogPost.username == null))
-				|| (this.username.equals(otherBlogPost.username)));
+		boolean isEqual = (((this.blogPostEntityId == null) && (otherBlogPost.blogPostEntityId == null))
+				|| (this.blogPostEntityId.equals(otherBlogPost.blogPostEntityId)));
 		isEqual = isEqual && (((this.title == null) && (otherBlogPost.title == null))
 				|| (this.title.equals(otherBlogPost.title)));
 		isEqual = isEqual
@@ -86,6 +82,6 @@ public class BlogPostEntity {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, username, title, body);
+		return Objects.hash(blogPostEntityId, title, body);
 	}
 }

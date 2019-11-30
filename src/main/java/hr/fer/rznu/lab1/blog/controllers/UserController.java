@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,8 +27,8 @@ public class UserController {
 	@Autowired
 	private UserRepository userRepository;
 
-	@Value(value = "${register}")
-	private String registerPath;
+	@Value("${users}")
+	private String usersPath;
 
 	@PostMapping(path = "${register}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> registerUser(@RequestBody final User user) {
@@ -36,7 +38,9 @@ public class UserController {
 		User newUser = new User(user.getUsername(), User.encryptPassword(user.getPassword()));
 		userRepository.save(newUser);
 
-		return new ResponseEntity<>(HttpStatus.CREATED);
+		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
+		headers.add("Location", usersPath + "/" + user.getUsername());
+		return new ResponseEntity<>(headers, HttpStatus.CREATED);
 	}
 
 	@GetMapping(path = "${users}", produces = MediaType.APPLICATION_JSON_VALUE)

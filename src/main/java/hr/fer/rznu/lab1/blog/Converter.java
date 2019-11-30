@@ -7,7 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import hr.fer.rznu.lab1.blog.dto.BlogPost;
+import hr.fer.rznu.lab1.blog.dto.BlogPostShort;
 import hr.fer.rznu.lab1.blog.entities.BlogPostEntity;
 import hr.fer.rznu.lab1.blog.entities.User;
 
@@ -38,8 +38,11 @@ public class Converter {
 		return om.readValue(content, valueType);
 	}
 
-	public static BlogPostEntity blogPostToEntity(final BlogPost blogPost) {
-
-		return null;
+	public static List<BlogPostShort> convertBlogPostEntitiesToShorts(final List<BlogPostEntity> entities) {
+		List<BlogPostShort> shorts = new ArrayList<>();
+		for (BlogPostEntity entity : entities) {
+			shorts.add(new BlogPostShort(entity.getId(), entity.getUsername(), entity.getTitle()));
+		}
+		return shorts;
 	}
 }
