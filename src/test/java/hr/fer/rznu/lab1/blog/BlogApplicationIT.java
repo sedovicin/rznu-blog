@@ -125,13 +125,63 @@ class BlogApplicationIT {
 
 		assertThat(users).containsExactlyInAnyOrder(parsedUsers);
 		assertThat(parsedUsers).allSatisfy(user -> assertThat(user.getPassword()).isEmpty());
+
+		monoResponse = webClient.get().uri(usersPath + "/" + testUsername)
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		User userResponse = monoResponse.bodyToMono(User.class).block();
+		assertThat(userResponse.getPassword()).isEmpty();
+
+	}
+
+	private final String testEditUsername = "testEditUsername";
+	private final String testEditPassword = "testEditPassword";
+
+	@Test
+	@Order(value = 3)
+	public void userChangeShouldWork() {
+
+		User user = new User(testEditUsername, testEditPassword);
+		ClientResponse monoResponse = webClient.post().uri(registerPath).bodyValue(user).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.CREATED);
+
+		String newPassword = "newEditPassword";
+		User userEncryptedPassword = new User(testEditUsername, User.encryptPassword(newPassword));
+
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername).bodyValue(newPassword).exchange()
+				.block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(unauthUsername, unauthPassword)).bodyValue(newPassword)
+				.exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, testEditPassword)).bodyValue(newPassword)
+				.exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+		Optional<User> userFromDB = userRepository.findById(testEditUsername);
+		assertThat(userFromDB.isPresent()).isTrue();
+		assertThat(userFromDB.get()).isEqualTo(userEncryptedPassword);
+
+		monoResponse = webClient.get().uri(usersPath)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, newPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, newPassword)).bodyValue(testEditPassword)
+				.exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
 	}
 
 	private static final List<BlogPostShort> blogPostsStatic = new ArrayList<>();
 	private static BlogPostEntity blogPostStatic = null;
 
 	@Test
-	@Order(value = 3)
+	@Order(value = 4)
 	public void blogPostAdditionAndUpdateShouldWork() {
 		BlogPost blogPost = new BlogPost("Test blog", "Test content.");
 		String blogPostId = "test-blog";
@@ -215,7 +265,7 @@ class BlogApplicationIT {
 	}
 
 	@Test
-	@Order(value = 4)
+	@Order(value = 5)
 	public void blogPostFetchShouldWork() throws JsonMappingException, JsonProcessingException {
 		BlogPost blogPost = new BlogPost("Test blog 5000", "Test content 5000.");
 		String blogPostId5000 = "test-blog-5000";
@@ -332,7 +382,7 @@ class BlogApplicationIT {
 	}
 
 	@Test
-	@Order(value = 5)
+	@Order(value = 6)
 	public void blogPostDeleteShouldWork() {
 		// should be able to delete existing blog post
 		ClientResponse monoResponse = webClient.delete()
@@ -355,6 +405,34 @@ class BlogApplicationIT {
 				.uri(usersPath + "/" + testUsername1 + postsPath + "/" + blogPostsStatic.get(2).getId())
 				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+	}
+
+	@Test
+	@Order(value = 7)
+	public void userDeletionShouldWork() {
+		String testDeleteId = "testDeleteId";
+
+		ClientResponse monoResponse = webClient.put().uri(postsPath + "/" + testDeleteId)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, testEditPassword))
+				.bodyValue(new BlogPost("edit title", "edit body")).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.CREATED);
+
+		monoResponse = webClient.delete().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+		monoResponse = webClient.delete().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, testEditPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		monoResponse = webClient.get().uri(usersPath + "/" + testEditUsername)
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+		monoResponse = webClient.get().uri(usersPath + "/" + testEditUsername + "/" + testDeleteId)
+				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
 	}
 }

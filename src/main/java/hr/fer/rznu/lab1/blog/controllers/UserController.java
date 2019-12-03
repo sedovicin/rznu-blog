@@ -1,16 +1,18 @@
 package hr.fer.rznu.lab1.blog.controllers;
 
-import java.util.ArrayList;
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +21,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import hr.fer.rznu.lab1.blog.Converter;
+import hr.fer.rznu.lab1.blog.entities.BlogPostEntity;
 import hr.fer.rznu.lab1.blog.entities.User;
+import hr.fer.rznu.lab1.blog.repositories.BlogPostRepository;
 import hr.fer.rznu.lab1.blog.repositories.UserRepository;
 
 @RestController
@@ -53,12 +57,53 @@ public class UserController {
 
 	@GetMapping(path = "${users}/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<User> getUser(@PathVariable(value = "id") final String userName) {
-		List<User> userList = new ArrayList<>();
+	public ResponseEntity<User> getUser(@PathVariable(value = "id") final String userName) {
 		Optional<User> userOptional = userRepository.findById(userName);
 		if (userOptional.isPresent()) {
-			userList.add(userOptional.get());
+			User user = userOptional.get();
+			user.setPassword("");
+			return new ResponseEntity<>(user, HttpStatus.OK);
 		}
-		return Converter.removeUserPasswords(userList);
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+
+	@PostMapping(path = "${users}/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> changePassword(@PathVariable(value = "id") final String userName,
+			@RequestBody final String newPassword, final Principal principal) {
+		if (!userName.equals(principal.getName())) {
+			return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+		}
+		Optional<User> userOptional = userRepository.findById(userName);
+		if (userOptional.isPresent()) {
+			User user = userOptional.get();
+			user.setPassword(User.encryptPassword(newPassword));
+			userRepository.save(user);
+
+			return new ResponseEntity<>(HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+
+	@Autowired
+	private BlogPostRepository blogPostRepository;
+
+	@DeleteMapping(path = "${users}/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<String> deleteUser(@PathVariable(value = "id") final String userName,
+			final Principal principal) {
+		if (!userName.equals(principal.getName())) {
+			return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+		}
+		Optional<User> userOptional = userRepository.findById(userName);
+		if (userOptional.isPresent()) {
+			User user = userOptional.get();
+			List<BlogPostEntity> usersEntities = blogPostRepository
+					.findAll(Example.of(new BlogPostEntity(null, user.getUsername(), null, null)));
+
+			blogPostRepository.deleteAll(usersEntities);
+			userRepository.delete(user);
+
+			return new ResponseEntity<>(HttpStatus.OK);
+		}
+		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 }
