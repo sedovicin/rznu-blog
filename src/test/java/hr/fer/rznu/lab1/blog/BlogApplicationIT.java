@@ -3,7 +3,9 @@ package hr.fer.rznu.lab1.blog;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.MethodOrderer;
@@ -302,6 +304,31 @@ class BlogApplicationIT {
 				.headers(headers -> headers.setBasicAuth(testUsername1, testPassword1)).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.NOT_FOUND);
 
+		// fetching list searched by title keyword should work
+		Map<String, String> variables = new HashMap<>();
+		variables.put("title", "test");
+		monoResponse = webClient.get().uri(uriBuilder -> uriBuilder.path(postsPath).queryParam("title", "test").build())
+				.headers(headers -> headers.setBasicAuth(testUsername1, testPassword1)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		response = monoResponse.bodyToMono(String.class).block();
+		parsedPosts = Converter.convertJsonStringToObject(response, BlogPostShort[].class);
+
+		assertThat(parsedPosts).hasSize(2);
+		assertThat(parsedPosts).allMatch(parsedPost -> parsedPost.getTitle().toLowerCase().contains("test"));
+
+		// fetching users post list searched by title keyword should work
+		monoResponse = webClient.get()
+				.uri(uriBuilder -> uriBuilder.path(usersPath + "/" + testUsername1 + postsPath)
+						.queryParam("title", "test").build())
+				.headers(headers -> headers.setBasicAuth(testUsername1, testPassword1)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
+
+		response = monoResponse.bodyToMono(String.class).block();
+		parsedPosts = Converter.convertJsonStringToObject(response, BlogPostShort[].class);
+
+		assertThat(parsedPosts).hasSize(1);
+		assertThat(parsedPosts).allMatch(parsedPost -> parsedPost.getTitle().toLowerCase().contains("test"));
 	}
 
 	@Test

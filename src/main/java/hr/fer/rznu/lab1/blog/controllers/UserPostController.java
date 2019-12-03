@@ -6,12 +6,14 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,16 +30,25 @@ public class UserPostController {
 
 	@GetMapping(path = "${users}/{userId}${posts}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<BlogPostShort> getUserBlogPosts(@PathVariable final String userId) {
-		List<BlogPostEntity> postEntities = blogPostRepository
-				.findAll(Example.of(new BlogPostEntity(null, userId, null, null)));
+	public List<BlogPostShort> getUserBlogPosts(@PathVariable final String userId,
+			@RequestParam(name = "title", required = false) final String title) {
+		Example<BlogPostEntity> example;
+		if ((title == null) || title.isEmpty()) {
+			example = Example.of(new BlogPostEntity(null, userId, null, null));
+		} else {
+			ExampleMatcher matcher = ExampleMatcher.matchingAll().withMatcher("title",
+					ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+			example = Example.of(new BlogPostEntity(null, userId, title, null), matcher);
+		}
+		List<BlogPostEntity> postEntities = blogPostRepository.findAll(example);
 
 		return Converter.convertBlogPostEntitiesToShorts(postEntities);
 	}
 
 	@GetMapping(path = "${users}/{userId}${posts}/{postId}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public ResponseEntity<BlogPostEntity> getUserBlogPosts(@PathVariable final String userId,
+	public ResponseEntity<BlogPostEntity> getUserBlogPost(@PathVariable final String userId,
 			@PathVariable final String postId) {
 		Optional<BlogPostEntity> postEntity = blogPostRepository
 				.findOne(Example.of(new BlogPostEntity(postId, userId, null, null)));

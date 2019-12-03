@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,8 +60,16 @@ public class PostController {
 
 	@GetMapping(path = "${posts}", produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public List<BlogPostShort> getBlogPosts() {
-		List<BlogPostEntity> postEntities = blogPostRepository.findAll();
+	public List<BlogPostShort> getBlogPosts(@RequestParam(name = "title", required = false) final String title) {
+		List<BlogPostEntity> postEntities;
+		if ((title == null) || title.isEmpty()) {
+			postEntities = blogPostRepository.findAll();
+		} else {
+			ExampleMatcher matcher = ExampleMatcher.matchingAny().withMatcher("title",
+					ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase());
+
+			postEntities = blogPostRepository.findAll(Example.of(new BlogPostEntity(null, null, title, null), matcher));
+		}
 
 		return Converter.convertBlogPostEntitiesToShorts(postEntities);
 	}
