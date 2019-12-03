@@ -67,7 +67,7 @@ public class UserController {
 		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 	}
 
-	@PostMapping(path = "${users}/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+	@PostMapping(path = "${users}/{id}", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> changePassword(@PathVariable(value = "id") final String userName,
 			@RequestBody final String newPassword, final Principal principal) {
 		if (!userName.equals(principal.getName())) {

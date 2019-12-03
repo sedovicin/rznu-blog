@@ -167,6 +167,10 @@ class BlogApplicationIT {
 		assertThat(userFromDB.get()).isEqualTo(userEncryptedPassword);
 
 		monoResponse = webClient.get().uri(usersPath)
+				.headers(headers -> headers.setBasicAuth(testEditUsername, testEditPassword)).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+		monoResponse = webClient.get().uri(usersPath)
 				.headers(headers -> headers.setBasicAuth(testEditUsername, newPassword)).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
 
