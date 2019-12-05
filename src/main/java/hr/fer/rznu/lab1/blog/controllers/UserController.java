@@ -1,5 +1,8 @@
 package hr.fer.rznu.lab1.blog.controllers;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -105,5 +108,11 @@ public class UserController {
 			return new ResponseEntity<>(HttpStatus.OK);
 		}
 		return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+	}
+
+	@GetMapping(path = "/", produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> documentation() throws IOException {
+		String body = new String(Files.readAllBytes(new File("src/main/resources/static/doc.txt").toPath()));
+		return new ResponseEntity<>(body, HttpStatus.OK);
 	}
 }

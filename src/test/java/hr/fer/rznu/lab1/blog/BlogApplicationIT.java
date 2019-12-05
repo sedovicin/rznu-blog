@@ -158,9 +158,10 @@ class BlogApplicationIT {
 				.exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
 
-		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername)
-				.headers(headers -> headers.setBasicAuth(testEditUsername, testEditPassword)).bodyValue(newPassword)
-				.exchange().block();
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername).headers(headers -> {
+			headers.setBasicAuth(testEditUsername, testEditPassword);
+			headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
+		}).bodyValue(newPassword).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
 		Optional<User> userFromDB = userRepository.findById(testEditUsername);
 		assertThat(userFromDB.isPresent()).isTrue();
@@ -174,9 +175,10 @@ class BlogApplicationIT {
 				.headers(headers -> headers.setBasicAuth(testEditUsername, newPassword)).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
 
-		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername)
-				.headers(headers -> headers.setBasicAuth(testEditUsername, newPassword)).bodyValue(testEditPassword)
-				.exchange().block();
+		monoResponse = webClient.post().uri(usersPath + "/" + testEditUsername).headers(headers -> {
+			headers.setBasicAuth(testEditUsername, newPassword);
+			headers.add(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_PLAIN_VALUE);
+		}).bodyValue(testEditPassword).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
 
 	}
@@ -437,6 +439,17 @@ class BlogApplicationIT {
 		monoResponse = webClient.get().uri(usersPath + "/" + testEditUsername + "/" + testDeleteId)
 				.headers(headers -> headers.setBasicAuth(testUsername, testPassword)).exchange().block();
 		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+	}
+
+	@Test
+	@Order(value = 8)
+	public void testDocumentation() {
+		ClientResponse monoResponse = webClient.get().uri("/").headers(headers -> {
+			headers.setBasicAuth(testUsername, testPassword);
+			headers.add(HttpHeaders.ACCEPT, MediaType.TEXT_PLAIN_VALUE);
+		}).exchange().block();
+		assertThat(monoResponse.statusCode()).isEqualTo(HttpStatus.OK);
 
 	}
 }

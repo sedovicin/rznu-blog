@@ -1,0 +1,96 @@
+BLOG API dokumentacija
+
+Generalno
+Autentifikacija: BASIC authentication (username, password)
+Format tijela zahtjeva (ako je potrebno): JSON
+Format tijela odgovora (ako je potrebno): JSON
+
+POST /register
+Svrha: registracija korisnika. Jedini path za koji nije potrebna autentifikacija. Kod uspjeha vraća 201. Ako korisničko ime već postoji, vraća 409 (Conflict).
+Primjer tijela zahtjeva:
+{
+	"username":"korisnik",
+	"password": "lozinka"
+}
+
+GET /users
+Svrha: vraća popis svih korisnika, bez njihovih lozinki.
+Primjer tijela odgovora:
+[
+    {
+        "username": "korisnik",
+        "password": ""
+    }
+]
+
+
+GET /users/<username>
+Svrha: vraća detalje jednog korisnika, bez lozinke. Vraća 404 ako korisnik ne postoji
+Primjer tijela odgovora:
+{
+    "username": "korisnik",
+    "password": ""
+}
+
+
+POST /users/<username>
+Svrha: služi za promjenu lozinke. Ovo je jedini zahtjev kojemu je tijelo text/plain umjesto JSON. Za uspješnu promjenu lozinke, username autentifikacije mora odgovarati usernameu iz patha. Drugim riječima, korisnik može promijeniti samo svoju lozinku.
+Primjer tijela zahtjeva:
+Novalozinka4856
+
+
+DELETE /users/<username>
+Svrha: brisanje korisnika s navedenim usernameom i svih njegovih postova na blogu. Korisnik može obrisati samo samog sebe.
+
+GET /posts?title=<dio_naslova>
+Svrha: ispisivanje sažetka svakog blog posta: ID, username autora, naslov posta. Moguće je filtriranje opcionalnim parametrom „title“ kojem se za vrijednost postavi riječ koju želimo da se nalazi u naslovu, pri čemu će vratiti sažetke svih takvih postova.
+Primjer: /posts
+[
+    {
+        "id": "korisnikov-post",
+        "username": "korisnik",
+        "title": "Novi userov post!"
+    },
+    {
+        "id": "userov-post",
+        "username": "juzer",
+        "title": "Novi post!"
+    }
+]
+
+Primjer: /posts?title=user
+[
+    {
+        "id": "userov-post",
+        "username": "korisnik",
+        "title": "Novi userov post!"
+    }
+]
+
+
+PUT /posts/<id_novog_posta>
+Svrha: dodavanje novog posta, ili izmjena postojećeg posta. Ako je dodavanje uspješno, vrati 201, a ako je izmjena uspješna, vrati 200. Moguća je izmjena samo vlastitog posta.
+Primjer tijela zahtjeva:
+{
+	"title": "Novi post!",
+	"body": "Tekst posta"
+}
+
+GET /users/<username>/posts
+Svrha: dohvat sažetka (ID, username, naslov) svih postova nekog korisnika. Moguće je filtriranje opcionalnim parametrom „title“ kojem se za vrijednost postavi riječ koju želimo da se nalazi u naslovu, pri čemu će vratiti sažetke svih takvih postova.
+Primjer: vidi „GET /posts“
+
+GET /users/<username>/posts/<ID_posta>
+Svrha: dohvat svih podataka o jednom postu: ID, username autora, naslov, sadržaj.
+Primjer tijela odgovora:
+{
+    "title": "Novi userov post!",
+    "body": "Tekst userovog posta",
+    "id": "userov-post",
+    "username": "korisnik"
+}
+
+
+DELETE /users/<username>/posts/<ID_posta>
+Svrha: brisanje konkretnog posta. Smije se obrisati samo vlastiti post.
+
