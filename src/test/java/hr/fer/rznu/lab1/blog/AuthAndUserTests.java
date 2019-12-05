@@ -130,16 +130,15 @@ public class AuthAndUserTests {
 				.andExpect(content().contentType(MediaType.APPLICATION_JSON)).andExpect(content().json(listToJson));
 
 		// query for a single user
-		users = new ArrayList<>();
-		users.add(user1);
-		listToJson = Converter.convertObjectToJsonString(Converter.removeUserPasswords(users));
+		user1.setPassword("");
+		String userToJson = Converter.convertObjectToJsonString(user1);
 
 		when(userRepository.findById(user1.getUsername())).thenReturn(Optional.of(user1));
 
 		ensureAuthentication(testUser);
 		performJsonRequest(get(usersPath + "/" + user1.getUsername()), testUser.getUsername(), testPassword, null)
 				.andExpect(status().isOk()).andExpect(content().contentType(MediaType.APPLICATION_JSON))
-				.andExpect(content().json(listToJson));
+				.andExpect(content().json(userToJson));
 	}
 
 	/**
